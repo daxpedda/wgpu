@@ -10,6 +10,8 @@ use crate::{
 use arrayvec::ArrayVec;
 use parking_lot::Mutex;
 use smallvec::SmallVec;
+#[cfg(any(feature = "glsl", feature = "spirv"))]
+use std::borrow::Cow;
 use std::{
     borrow::Cow::Borrowed,
     error::Error,
@@ -1104,7 +1106,7 @@ impl crate::Context for Context {
                 };
                 let parser = naga::front::spv::Parser::new(spv.iter().cloned(), &options);
                 let module = parser.parse().unwrap();
-                wgc::pipeline::ShaderModuleSource::Naga(module)
+                wgc::pipeline::ShaderModuleSource::Naga(Cow::Owned(module))
             }
             #[cfg(feature = "glsl")]
             ShaderSource::Glsl {
@@ -1120,7 +1122,7 @@ impl crate::Context for Context {
                 let mut parser = naga::front::glsl::Parser::default();
                 let module = parser.parse(&options, shader).unwrap();
 
-                wgc::pipeline::ShaderModuleSource::Naga(module)
+                wgc::pipeline::ShaderModuleSource::Naga(Cow::Owned(module))
             }
             ShaderSource::Wgsl(ref code) => wgc::pipeline::ShaderModuleSource::Wgsl(Borrowed(code)),
             #[cfg(feature = "naga")]

@@ -33,3 +33,5 @@ default-members = ["wgpu", "wgpu-hal", "wgpu-info"]
 #web-sys = { path = "../wasm-bindgen/crates/web-sys" }
 #js-sys = { path = "../wasm-bindgen/crates/js-sys" }
 #wasm-bindgen = { path = "../wasm-bindgen" }
+# https://github.com/gfx-rs/naga/pull/2013
+naga = { git = "https://github.com/daxpedda/naga", branch = "module-clone" }
