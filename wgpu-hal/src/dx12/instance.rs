@@ -86,14 +86,33 @@ impl crate::Instance<super::Api> for super::Instance {
 
     unsafe fn create_surface(
         &self,
-        _display_handle: raw_window_handle::RawDisplayHandle,
-        window_handle: raw_window_handle::RawWindowHandle,
+        _display_handle: raw_window_handle_0_5::RawDisplayHandle,
+        window_handle: raw_window_handle_0_5::RawWindowHandle,
     ) -> Result<super::Surface, crate::InstanceError> {
         match window_handle {
-            raw_window_handle::RawWindowHandle::Win32(handle) => Ok(super::Surface {
+            raw_window_handle_0_5::RawWindowHandle::Win32(handle) => Ok(super::Surface {
                 factory: self.factory.clone(),
                 factory_media: self.factory_media.clone(),
                 target: SurfaceTarget::WndHandle(handle.hwnd as *mut _),
+                supports_allow_tearing: self.supports_allow_tearing,
+                swap_chain: None,
+            }),
+            _ => Err(crate::InstanceError::new(format!(
+                "window handle {window_handle:?} is not a Win32 handle"
+            ))),
+        }
+    }
+    #[cfg(feature = "raw-window-handle-0-6")]
+    unsafe fn create_surface_0_6(
+        &self,
+        _display_handle: raw_window_handle_0_6::RawDisplayHandle,
+        window_handle: raw_window_handle_0_6::RawWindowHandle,
+    ) -> Result<super::Surface, crate::InstanceError> {
+        match window_handle {
+            raw_window_handle_0_6::RawWindowHandle::Win32(handle) => Ok(super::Surface {
+                factory: self.factory.clone(),
+                factory_media: self.factory_media.clone(),
+                target: SurfaceTarget::WndHandle(handle.hwnd.get() as *mut _),
                 supports_allow_tearing: self.supports_allow_tearing,
                 swap_chain: None,
             }),

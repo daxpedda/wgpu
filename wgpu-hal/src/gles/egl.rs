@@ -836,10 +836,10 @@ impl crate::Instance<super::Api> for Instance {
     #[cfg_attr(target_os = "macos", allow(unused, unused_mut, unreachable_code))]
     unsafe fn create_surface(
         &self,
-        display_handle: raw_window_handle::RawDisplayHandle,
-        window_handle: raw_window_handle::RawWindowHandle,
+        display_handle: raw_window_handle_0_5::RawDisplayHandle,
+        window_handle: raw_window_handle_0_5::RawWindowHandle,
     ) -> Result<Surface, crate::InstanceError> {
-        use raw_window_handle::RawWindowHandle as Rwh;
+        use raw_window_handle_0_5::RawWindowHandle as Rwh;
 
         #[cfg_attr(
             any(target_os = "android", target_os = "emscripten"),
@@ -875,7 +875,7 @@ impl crate::Instance<super::Api> for Instance {
                 }
             }
             #[cfg(not(target_os = "emscripten"))]
-            (Rwh::Wayland(_), raw_window_handle::RawDisplayHandle::Wayland(display_handle)) => {
+            (Rwh::Wayland(_), raw_window_handle_0_5::RawDisplayHandle::Wayland(display_handle)) => {
                 if inner
                     .wl_display
                     .map(|ptr| ptr != display_handle.display)
@@ -935,7 +935,115 @@ impl crate::Instance<super::Api> for Instance {
             wsi: self.wsi.clone(),
             config: inner.config,
             presentable: inner.supports_native_window,
-            raw_window_handle: window_handle,
+            raw_window_handle: VersionedRawWindowHandle::V05(window_handle),
+            swapchain: None,
+            srgb_kind: inner.srgb_kind,
+        })
+    }
+    #[cfg(feature = "raw-window-handle-0-6")]
+    #[cfg_attr(target_os = "macos", allow(unused, unused_mut, unreachable_code))]
+    unsafe fn create_surface_0_6(
+        &self,
+        display_handle: raw_window_handle_0_6::RawDisplayHandle,
+        window_handle: raw_window_handle_0_6::RawWindowHandle,
+    ) -> Result<Surface, crate::InstanceError> {
+        use raw_window_handle_0_6::RawWindowHandle as Rwh;
+
+        #[cfg_attr(
+            any(target_os = "android", target_os = "emscripten"),
+            allow(unused_mut)
+        )]
+        let mut inner = self.inner.lock();
+
+        match (window_handle, display_handle) {
+            (Rwh::Xlib(_), _) => {}
+            (Rwh::Xcb(_), _) => {}
+            (Rwh::Win32(_), _) => {}
+            (Rwh::AppKit(_), _) => {}
+            #[cfg(target_os = "android")]
+            (Rwh::AndroidNdk(handle), _) => {
+                let format = inner
+                    .egl
+                    .instance
+                    .get_config_attrib(
+                        inner.egl.display,
+                        inner.config,
+                        khronos_egl::NATIVE_VISUAL_ID,
+                    )
+                    .unwrap();
+
+                let ret = unsafe {
+                    ANativeWindow_setBuffersGeometry(handle.a_native_window.as_ptr(), 0, 0, format)
+                };
+
+                if ret != 0 {
+                    return Err(crate::InstanceError::new(format!(
+                        "error {ret} returned from ANativeWindow_setBuffersGeometry",
+                    )));
+                }
+            }
+            #[cfg(not(target_os = "emscripten"))]
+            (Rwh::Wayland(_), raw_window_handle_0_6::RawDisplayHandle::Wayland(display_handle)) => {
+                if inner
+                    .wl_display
+                    .map(|ptr| ptr != display_handle.display.as_ptr())
+                    .unwrap_or(true)
+                {
+                    /* Wayland displays are not sharable between surfaces so if the
+                     * surface we receive from this handle is from a different
+                     * display, we must re-initialize the context.
+                     *
+                     * See gfx-rs/gfx#3545
+                     */
+                    log::warn!("Re-initializing Gles context due to Wayland window");
+
+                    use std::ops::DerefMut;
+                    let display_attributes = [khronos_egl::ATTRIB_NONE];
+
+                    let display = unsafe {
+                        inner
+                            .egl
+                            .instance
+                            .upcast::<khronos_egl::EGL1_5>()
+                            .unwrap()
+                            .get_platform_display(
+                                EGL_PLATFORM_WAYLAND_KHR,
+                                display_handle.display.as_ptr(),
+                                &display_attributes,
+                            )
+                    }
+                    .unwrap();
+
+                    let new_inner = Inner::create(
+                        self.flags,
+                        Arc::clone(&inner.egl.instance),
+                        display,
+                        inner.force_gles_minor_version,
+                    )?;
+
+                    let old_inner = std::mem::replace(inner.deref_mut(), new_inner);
+                    inner.wl_display = Some(display_handle.display.as_ptr());
+
+                    drop(old_inner);
+                }
+            }
+            #[cfg(target_os = "emscripten")]
+            (Rwh::Web(_), _) => {}
+            other => {
+                return Err(crate::InstanceError::new(format!(
+                    "unsupported window: {other:?}"
+                )));
+            }
+        };
+
+        inner.egl.unmake_current();
+
+        Ok(Surface {
+            egl: inner.egl.clone(),
+            wsi: self.wsi.clone(),
+            config: inner.config,
+            presentable: inner.supports_native_window,
+            raw_window_handle: VersionedRawWindowHandle::V06(window_handle),
             swapchain: None,
             srgb_kind: inner.srgb_kind,
         })
@@ -1033,9 +1141,16 @@ pub struct Surface {
     wsi: WindowSystemInterface,
     config: khronos_egl::Config,
     pub(super) presentable: bool,
-    raw_window_handle: raw_window_handle::RawWindowHandle,
+    raw_window_handle: VersionedRawWindowHandle,
     swapchain: Option<Swapchain>,
     srgb_kind: SrgbFrameBufferKind,
+}
+
+#[derive(Clone, Copy, Debug)]
+enum VersionedRawWindowHandle {
+    V05(raw_window_handle_0_5::RawWindowHandle),
+    #[cfg(feature = "raw-window-handle-0-6")]
+    V06(raw_window_handle_0_6::RawWindowHandle),
 }
 
 unsafe impl Send for Surface {}
@@ -1134,7 +1249,9 @@ impl crate::Surface<super::Api> for Surface {
         device: &super::Device,
         config: &crate::SurfaceConfiguration,
     ) -> Result<(), crate::SurfaceError> {
-        use raw_window_handle::RawWindowHandle as Rwh;
+        use raw_window_handle_0_5::RawWindowHandle as Rwh05;
+        #[cfg(feature = "raw-window-handle-0-6")]
+        use raw_window_handle_0_6::RawWindowHandle as Rwh06;
 
         let (surface, wl_window) = match unsafe { self.unconfigure_impl(device) } {
             Some(pair) => pair,
@@ -1143,22 +1260,63 @@ impl crate::Surface<super::Api> for Surface {
                 let (mut temp_xlib_handle, mut temp_xcb_handle);
                 #[allow(trivial_casts)]
                 let native_window_ptr = match (self.wsi.kind, self.raw_window_handle) {
-                    (WindowKind::Unknown | WindowKind::X11, Rwh::Xlib(handle)) => {
+                    (
+                        WindowKind::Unknown | WindowKind::X11,
+                        VersionedRawWindowHandle::V05(Rwh05::Xlib(handle)),
+                    ) => {
                         temp_xlib_handle = handle.window;
                         &mut temp_xlib_handle as *mut _ as *mut std::ffi::c_void
                     }
-                    (WindowKind::AngleX11, Rwh::Xlib(handle)) => {
+                    #[cfg(feature = "raw-window-handle-0-6")]
+                    (
+                        WindowKind::Unknown | WindowKind::X11,
+                        VersionedRawWindowHandle::V06(Rwh06::Xlib(handle)),
+                    ) => {
+                        temp_xlib_handle = handle.window;
+                        &mut temp_xlib_handle as *mut _ as *mut std::ffi::c_void
+                    }
+                    (WindowKind::AngleX11, VersionedRawWindowHandle::V05(Rwh05::Xlib(handle))) => {
                         handle.window as *mut std::ffi::c_void
                     }
-                    (WindowKind::Unknown | WindowKind::X11, Rwh::Xcb(handle)) => {
+                    #[cfg(feature = "raw-window-handle-0-6")]
+                    (WindowKind::AngleX11, VersionedRawWindowHandle::V06(Rwh06::Xlib(handle))) => {
+                        handle.window as *mut std::ffi::c_void
+                    }
+                    (
+                        WindowKind::Unknown | WindowKind::X11,
+                        VersionedRawWindowHandle::V05(Rwh05::Xcb(handle)),
+                    ) => {
                         temp_xcb_handle = handle.window;
                         &mut temp_xcb_handle as *mut _ as *mut std::ffi::c_void
                     }
-                    (WindowKind::AngleX11, Rwh::Xcb(handle)) => {
+                    #[cfg(feature = "raw-window-handle-0-6")]
+                    (
+                        WindowKind::Unknown | WindowKind::X11,
+                        VersionedRawWindowHandle::V06(Rwh06::Xcb(handle)),
+                    ) => {
+                        temp_xcb_handle = handle.window.get();
+                        &mut temp_xcb_handle as *mut _ as *mut std::ffi::c_void
+                    }
+                    (WindowKind::AngleX11, VersionedRawWindowHandle::V05(Rwh05::Xcb(handle))) => {
                         handle.window as *mut std::ffi::c_void
                     }
-                    (WindowKind::Unknown, Rwh::AndroidNdk(handle)) => handle.a_native_window,
-                    (WindowKind::Wayland, Rwh::Wayland(handle)) => {
+                    #[cfg(feature = "raw-window-handle-0-6")]
+                    (WindowKind::AngleX11, VersionedRawWindowHandle::V06(Rwh06::Xcb(handle))) => {
+                        handle.window.get() as *mut std::ffi::c_void
+                    }
+                    (
+                        WindowKind::Unknown,
+                        VersionedRawWindowHandle::V05(Rwh05::AndroidNdk(handle)),
+                    ) => handle.a_native_window,
+                    #[cfg(feature = "raw-window-handle-0-6")]
+                    (
+                        WindowKind::Unknown,
+                        VersionedRawWindowHandle::V06(Rwh06::AndroidNdk(handle)),
+                    ) => handle.a_native_window.as_ptr(),
+                    (
+                        WindowKind::Wayland,
+                        VersionedRawWindowHandle::V05(Rwh05::Wayland(handle)),
+                    ) => {
                         let library = &self.wsi.display_owner.as_ref().unwrap().library;
                         let wl_egl_window_create: libloading::Symbol<WlEglWindowCreateFun> =
                             unsafe { library.get(b"wl_egl_window_create") }.unwrap();
@@ -1166,10 +1324,36 @@ impl crate::Surface<super::Api> for Surface {
                         wl_window = Some(window);
                         window
                     }
+                    #[cfg(feature = "raw-window-handle-0-6")]
+                    (
+                        WindowKind::Wayland,
+                        VersionedRawWindowHandle::V06(Rwh06::Wayland(handle)),
+                    ) => {
+                        let library = &self.wsi.display_owner.as_ref().unwrap().library;
+                        let wl_egl_window_create: libloading::Symbol<WlEglWindowCreateFun> =
+                            unsafe { library.get(b"wl_egl_window_create") }.unwrap();
+                        let window =
+                            unsafe { wl_egl_window_create(handle.surface.as_ptr(), 640, 480) }
+                                as *mut _;
+                        wl_window = Some(window);
+                        window
+                    }
                     #[cfg(target_os = "emscripten")]
-                    (WindowKind::Unknown, Rwh::Web(handle)) => handle.id as *mut std::ffi::c_void,
-                    (WindowKind::Unknown, Rwh::Win32(handle)) => handle.hwnd,
-                    (WindowKind::Unknown, Rwh::AppKit(handle)) => {
+                    (WindowKind::Unknown, VersionedRawWindowHandle::V05(Rwh05::Web(handle))) => {
+                        handle.id as *mut std::ffi::c_void
+                    }
+                    #[cfg(all(target_os = "emscripten", feature = "raw-window-handle-0-6"))]
+                    (WindowKind::Unknown, VersionedRawWindowHandle::V06(Rwh06::Web(handle))) => {
+                        handle.id as *mut std::ffi::c_void
+                    }
+                    (WindowKind::Unknown, VersionedRawWindowHandle::V05(Rwh05::Win32(handle))) => {
+                        handle.hwnd
+                    }
+                    #[cfg(feature = "raw-window-handle-0-6")]
+                    (WindowKind::Unknown, VersionedRawWindowHandle::V06(Rwh06::Win32(handle))) => {
+                        handle.hwnd.get() as *mut std::ffi::c_void
+                    }
+                    (WindowKind::Unknown, VersionedRawWindowHandle::V05(Rwh05::AppKit(handle))) => {
                         #[cfg(not(target_os = "macos"))]
                         let window_ptr = handle.ns_view;
                         #[cfg(target_os = "macos")]
@@ -1178,6 +1362,20 @@ impl crate::Surface<super::Api> for Surface {
                             // ns_view always have a layer and don't need to verify that it exists.
                             let layer: *mut Object =
                                 msg_send![handle.ns_view as *mut Object, layer];
+                            layer as *mut ffi::c_void
+                        };
+                        window_ptr
+                    }
+                    #[cfg(feature = "raw-window-handle-0-6")]
+                    (WindowKind::Unknown, VersionedRawWindowHandle::V06(Rwh06::AppKit(handle))) => {
+                        #[cfg(not(target_os = "macos"))]
+                        let window_ptr = handle.ns_view.as_ptr();
+                        #[cfg(target_os = "macos")]
+                        let window_ptr = {
+                            use objc::{msg_send, runtime::Object, sel, sel_impl};
+                            // ns_view always have a layer and don't need to verify that it exists.
+                            let layer: *mut Object =
+                                msg_send![handle.ns_view.as_ptr() as *mut Object, layer];
                             layer as *mut ffi::c_void
                         };
                         window_ptr

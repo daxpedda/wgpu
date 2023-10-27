@@ -1937,15 +1937,49 @@ impl Instance {
     /// - On web: will panic if the `raw_window_handle` does not properly refer to a
     ///   canvas element.
     pub unsafe fn create_surface<
-        W: raw_window_handle::HasRawWindowHandle + raw_window_handle::HasRawDisplayHandle,
+        W: raw_window_handle_0_5::HasRawWindowHandle + raw_window_handle_0_5::HasRawDisplayHandle,
     >(
         &self,
         window: &W,
     ) -> Result<Surface, CreateSurfaceError> {
         let (id, data) = DynContext::instance_create_surface(
             &*self.context,
-            raw_window_handle::HasRawDisplayHandle::raw_display_handle(window),
-            raw_window_handle::HasRawWindowHandle::raw_window_handle(window),
+            raw_window_handle_0_5::HasRawDisplayHandle::raw_display_handle(window),
+            raw_window_handle_0_5::HasRawWindowHandle::raw_window_handle(window),
+        )?;
+        Ok(Surface {
+            context: Arc::clone(&self.context),
+            id,
+            data,
+            config: Mutex::new(None),
+        })
+    }
+
+    /// See [`create_surface`](Self::create_surface).
+    #[cfg(feature = "raw-window-handle-0-6")]
+    #[allow(clippy::missing_safety_doc)]
+    pub unsafe fn create_surface_0_6<
+        W: raw_window_handle_0_6::HasWindowHandle + raw_window_handle_0_6::HasDisplayHandle,
+    >(
+        &self,
+        window: &W,
+    ) -> Result<Surface, CreateSurfaceError> {
+        let raw_display_handle = window
+            .display_handle()
+            .map_err(|e| CreateSurfaceError {
+                inner: CreateSurfaceErrorKind::RawHandle(e),
+            })?
+            .as_raw();
+        let raw_window_handle = window
+            .window_handle()
+            .map_err(|e| CreateSurfaceError {
+                inner: CreateSurfaceErrorKind::RawHandle(e),
+            })?
+            .as_raw();
+        let (id, data) = DynContext::instance_create_surface_0_6(
+            &*self.context,
+            raw_display_handle,
+            raw_window_handle,
         )?;
         Ok(Surface {
             context: Arc::clone(&self.context),
@@ -2925,6 +2959,11 @@ enum CreateSurfaceErrorKind {
     /// Error from WebGPU surface creation.
     #[allow(dead_code)] // may be unused depending on target and features
     Web(String),
+
+    /// Error when trying to get a [`DisplayHandle`] or a [`WindowHandle`] from
+    /// `raw_window_handle`.
+    #[cfg(feature = "raw-window-handle-0-6")]
+    RawHandle(raw_window_handle_0_6::HandleError),
 }
 static_assertions::assert_impl_all!(CreateSurfaceError: Send, Sync);
 
@@ -2938,6 +2977,8 @@ impl fmt::Display for CreateSurfaceError {
             ))]
             CreateSurfaceErrorKind::Hal(e) => e.fmt(f),
             CreateSurfaceErrorKind::Web(e) => e.fmt(f),
+            #[cfg(feature = "raw-window-handle-0-6")]
+            CreateSurfaceErrorKind::RawHandle(e) => e.fmt(f),
         }
     }
 }
@@ -2952,6 +2993,8 @@ impl error::Error for CreateSurfaceError {
             ))]
             CreateSurfaceErrorKind::Hal(e) => e.source(),
             CreateSurfaceErrorKind::Web(_) => None,
+            #[cfg(feature = "raw-window-handle-0-6")]
+            CreateSurfaceErrorKind::RawHandle(e) => e.source(),
         }
     }
 }

@@ -89,18 +89,43 @@ impl crate::Instance<Api> for Instance {
 
     unsafe fn create_surface(
         &self,
-        _display_handle: raw_window_handle::RawDisplayHandle,
-        window_handle: raw_window_handle::RawWindowHandle,
+        _display_handle: raw_window_handle_0_5::RawDisplayHandle,
+        window_handle: raw_window_handle_0_5::RawWindowHandle,
     ) -> Result<Surface, crate::InstanceError> {
         match window_handle {
             #[cfg(target_os = "ios")]
-            raw_window_handle::RawWindowHandle::UiKit(handle) => {
+            raw_window_handle_0_5::RawWindowHandle::UiKit(handle) => {
                 let _ = &self.managed_metal_layer_delegate;
                 Ok(unsafe { Surface::from_view(handle.ui_view, None) })
             }
             #[cfg(target_os = "macos")]
-            raw_window_handle::RawWindowHandle::AppKit(handle) => Ok(unsafe {
+            raw_window_handle_0_5::RawWindowHandle::AppKit(handle) => Ok(unsafe {
                 Surface::from_view(handle.ns_view, Some(&self.managed_metal_layer_delegate))
+            }),
+            _ => Err(crate::InstanceError::new(format!(
+                "window handle {window_handle:?} is not a Metal-compatible handle"
+            ))),
+        }
+    }
+
+    #[cfg(feature = "raw-window-handle-0-6")]
+    unsafe fn create_surface_0_6(
+        &self,
+        _display_handle: raw_window_handle_0_6::RawDisplayHandle,
+        window_handle: raw_window_handle_0_6::RawWindowHandle,
+    ) -> Result<Surface, crate::InstanceError> {
+        match window_handle {
+            #[cfg(target_os = "ios")]
+            raw_window_handle_0_6::RawWindowHandle::UiKit(handle) => {
+                let _ = &self.managed_metal_layer_delegate;
+                Ok(unsafe { Surface::from_view(handle.ui_view.as_ptr(), None) })
+            }
+            #[cfg(target_os = "macos")]
+            raw_window_handle_0_6::RawWindowHandle::AppKit(handle) => Ok(unsafe {
+                Surface::from_view(
+                    handle.ns_view.as_ptr(),
+                    Some(&self.managed_metal_layer_delegate),
+                )
             }),
             _ => Err(crate::InstanceError::new(format!(
                 "window handle {window_handle:?} is not a Metal-compatible handle"

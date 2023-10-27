@@ -143,10 +143,34 @@ impl crate::Instance<super::Api> for Instance {
 
     unsafe fn create_surface(
         &self,
-        _display_handle: raw_window_handle::RawDisplayHandle,
-        window_handle: raw_window_handle::RawWindowHandle,
+        _display_handle: raw_window_handle_0_5::RawDisplayHandle,
+        window_handle: raw_window_handle_0_5::RawWindowHandle,
     ) -> Result<Surface, crate::InstanceError> {
-        if let raw_window_handle::RawWindowHandle::Web(handle) = window_handle {
+        if let raw_window_handle_0_5::RawWindowHandle::Web(handle) = window_handle {
+            let canvas: web_sys::HtmlCanvasElement = web_sys::window()
+                .and_then(|win| win.document())
+                .expect("Cannot get document")
+                .query_selector(&format!("canvas[data-raw-handle=\"{}\"]", handle.id))
+                .expect("Cannot query for canvas")
+                .expect("Canvas is not found")
+                .dyn_into()
+                .expect("Failed to downcast to canvas type");
+
+            self.create_surface_from_canvas(canvas)
+        } else {
+            Err(crate::InstanceError::new(format!(
+                "window handle {window_handle:?} is not a web handle"
+            )))
+        }
+    }
+
+    #[cfg(feature = "raw-window-handle-0-6")]
+    unsafe fn create_surface_0_6(
+        &self,
+        _display_handle: raw_window_handle_0_6::RawDisplayHandle,
+        window_handle: raw_window_handle_0_6::RawWindowHandle,
+    ) -> Result<Surface, crate::InstanceError> {
+        if let raw_window_handle_0_6::RawWindowHandle::Web(handle) = window_handle {
             let canvas: web_sys::HtmlCanvasElement = web_sys::window()
                 .and_then(|win| win.document())
                 .expect("Cannot get document")

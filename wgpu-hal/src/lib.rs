@@ -219,8 +219,14 @@ pub trait Instance<A: Api>: Sized + WasmNotSend + WasmNotSync {
     unsafe fn init(desc: &InstanceDescriptor) -> Result<Self, InstanceError>;
     unsafe fn create_surface(
         &self,
-        display_handle: raw_window_handle::RawDisplayHandle,
-        window_handle: raw_window_handle::RawWindowHandle,
+        display_handle: raw_window_handle_0_5::RawDisplayHandle,
+        window_handle: raw_window_handle_0_5::RawWindowHandle,
+    ) -> Result<A::Surface, InstanceError>;
+    #[cfg(feature = "raw-window-handle-0-6")]
+    unsafe fn create_surface_0_6(
+        &self,
+        display_handle: raw_window_handle_0_6::RawDisplayHandle,
+        window_handle: raw_window_handle_0_6::RawWindowHandle,
     ) -> Result<A::Surface, InstanceError>;
     unsafe fn destroy_surface(&self, surface: A::Surface);
     unsafe fn enumerate_adapters(&self) -> Vec<ExposedAdapter<A>>;

@@ -44,8 +44,16 @@ impl crate::Instance<Api> for Context {
     }
     unsafe fn create_surface(
         &self,
-        _display_handle: raw_window_handle::RawDisplayHandle,
-        _window_handle: raw_window_handle::RawWindowHandle,
+        _display_handle: raw_window_handle_0_5::RawDisplayHandle,
+        _window_handle: raw_window_handle_0_5::RawWindowHandle,
+    ) -> Result<Context, crate::InstanceError> {
+        Ok(Context)
+    }
+    #[cfg(feature = "raw-window-handle-0-6")]
+    unsafe fn create_surface_0_6(
+        &self,
+        _display_handle: raw_window_handle_0_6::RawDisplayHandle,
+        _window_handle: raw_window_handle_0_6::RawWindowHandle,
     ) -> Result<Context, crate::InstanceError> {
         Ok(Context)
     }

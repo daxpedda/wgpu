@@ -98,8 +98,14 @@ pub trait Context: Debug + WasmNotSend + WasmNotSync + Sized {
     fn init(instance_desc: wgt::InstanceDescriptor) -> Self;
     fn instance_create_surface(
         &self,
-        display_handle: raw_window_handle::RawDisplayHandle,
-        window_handle: raw_window_handle::RawWindowHandle,
+        display_handle: raw_window_handle_0_5::RawDisplayHandle,
+        window_handle: raw_window_handle_0_5::RawWindowHandle,
+    ) -> Result<(Self::SurfaceId, Self::SurfaceData), crate::CreateSurfaceError>;
+    #[cfg(feature = "raw-window-handle-0-6")]
+    fn instance_create_surface_0_6(
+        &self,
+        display_handle: raw_window_handle_0_6::RawDisplayHandle,
+        window_handle: raw_window_handle_0_6::RawWindowHandle,
     ) -> Result<(Self::SurfaceId, Self::SurfaceData), crate::CreateSurfaceError>;
     fn instance_request_adapter(
         &self,
@@ -1206,8 +1212,14 @@ pub(crate) trait DynContext: Debug + WasmNotSend + WasmNotSync {
 
     fn instance_create_surface(
         &self,
-        display_handle: raw_window_handle::RawDisplayHandle,
-        window_handle: raw_window_handle::RawWindowHandle,
+        display_handle: raw_window_handle_0_5::RawDisplayHandle,
+        window_handle: raw_window_handle_0_5::RawWindowHandle,
+    ) -> Result<(ObjectId, Box<crate::Data>), crate::CreateSurfaceError>;
+    #[cfg(feature = "raw-window-handle-0-6")]
+    fn instance_create_surface_0_6(
+        &self,
+        display_handle: raw_window_handle_0_6::RawDisplayHandle,
+        window_handle: raw_window_handle_0_6::RawWindowHandle,
     ) -> Result<(ObjectId, Box<crate::Data>), crate::CreateSurfaceError>;
     #[allow(clippy::type_complexity)]
     fn instance_request_adapter(
@@ -2060,11 +2072,22 @@ where
 
     fn instance_create_surface(
         &self,
-        display_handle: raw_window_handle::RawDisplayHandle,
-        window_handle: raw_window_handle::RawWindowHandle,
+        display_handle: raw_window_handle_0_5::RawDisplayHandle,
+        window_handle: raw_window_handle_0_5::RawWindowHandle,
     ) -> Result<(ObjectId, Box<crate::Data>), crate::CreateSurfaceError> {
         let (surface, data) =
             Context::instance_create_surface(self, display_handle, window_handle)?;
+        Ok((surface.into(), Box::new(data) as _))
+    }
+
+    #[cfg(feature = "raw-window-handle-0-6")]
+    fn instance_create_surface_0_6(
+        &self,
+        display_handle: raw_window_handle_0_6::RawDisplayHandle,
+        window_handle: raw_window_handle_0_6::RawWindowHandle,
+    ) -> Result<(ObjectId, Box<crate::Data>), crate::CreateSurfaceError> {
+        let (surface, data) =
+            Context::instance_create_surface_0_6(self, display_handle, window_handle)?;
         Ok((surface.into(), Box::new(data) as _))
     }
 

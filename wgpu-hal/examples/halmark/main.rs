@@ -5,7 +5,7 @@ extern crate wgpu_hal as hal;
 use hal::{
     Adapter as _, CommandEncoder as _, Device as _, Instance as _, Queue as _, Surface as _,
 };
-use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
+use raw_window_handle_0_5::{HasRawDisplayHandle, HasRawWindowHandle};
 
 use std::{
     borrow::{Borrow, Cow},

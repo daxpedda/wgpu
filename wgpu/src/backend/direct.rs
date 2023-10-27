@@ -590,12 +590,31 @@ impl crate::Context for Context {
 
     fn instance_create_surface(
         &self,
-        display_handle: raw_window_handle::RawDisplayHandle,
-        window_handle: raw_window_handle::RawWindowHandle,
+        display_handle: raw_window_handle_0_5::RawDisplayHandle,
+        window_handle: raw_window_handle_0_5::RawWindowHandle,
     ) -> Result<(Self::SurfaceId, Self::SurfaceData), crate::CreateSurfaceError> {
         let id = self
             .0
             .instance_create_surface(display_handle, window_handle, ());
+
+        Ok((
+            id,
+            Surface {
+                id,
+                configured_device: Mutex::new(None),
+            },
+        ))
+    }
+
+    #[cfg(feature = "raw-window-handle-0-6")]
+    fn instance_create_surface_0_6(
+        &self,
+        display_handle: raw_window_handle_0_6::RawDisplayHandle,
+        window_handle: raw_window_handle_0_6::RawWindowHandle,
+    ) -> Result<(Self::SurfaceId, Self::SurfaceData), crate::CreateSurfaceError> {
+        let id = self
+            .0
+            .instance_create_surface_0_6(display_handle, window_handle, ());
 
         Ok((
             id,

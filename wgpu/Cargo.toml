@@ -100,7 +100,8 @@ flume.workspace = true
 log.workspace = true
 parking_lot.workspace = true
 profiling.workspace = true
-raw-window-handle.workspace = true
+raw-window-handle-0-5.workspace = true
+raw-window-handle-0-6 = { workspace = true, features = ["std"], optional = true }
 serde = { workspace = true, features = ["derive"], optional = true }
 smallvec.workspace = true
 static_assertions.workspace = true

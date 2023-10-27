@@ -5,7 +5,6 @@ use glutin_wgl_sys::wgl_extra::{
 };
 use once_cell::sync::Lazy;
 use parking_lot::{Mutex, MutexGuard};
-use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
 use std::{
     collections::HashSet,
     ffi::{c_void, CStr, CString},
@@ -430,10 +429,10 @@ impl crate::Instance<super::Api> for Instance {
     #[cfg_attr(target_os = "macos", allow(unused, unused_mut, unreachable_code))]
     unsafe fn create_surface(
         &self,
-        _display_handle: RawDisplayHandle,
-        window_handle: RawWindowHandle,
+        _display_handle: raw_window_handle_0_5::RawDisplayHandle,
+        window_handle: raw_window_handle_0_5::RawWindowHandle,
     ) -> Result<Surface, crate::InstanceError> {
-        let window = if let RawWindowHandle::Win32(handle) = window_handle {
+        let window = if let raw_window_handle_0_5::RawWindowHandle::Win32(handle) = window_handle {
             handle
         } else {
             return Err(crate::InstanceError::new(format!(
@@ -442,6 +441,27 @@ impl crate::Instance<super::Api> for Instance {
         };
         Ok(Surface {
             window: window.hwnd as *mut _,
+            presentable: true,
+            swapchain: None,
+            srgb_capable: self.srgb_capable,
+        })
+    }
+    #[cfg(feature = "raw-window-handle-0-6")]
+    #[cfg_attr(target_os = "macos", allow(unused, unused_mut, unreachable_code))]
+    unsafe fn create_surface_0_6(
+        &self,
+        _display_handle: raw_window_handle_0_6::RawDisplayHandle,
+        window_handle: raw_window_handle_0_6::RawWindowHandle,
+    ) -> Result<Surface, crate::InstanceError> {
+        let window = if let raw_window_handle_0_6::RawWindowHandle::Win32(handle) = window_handle {
+            handle
+        } else {
+            return Err(crate::InstanceError::new(format!(
+                "unsupported window: {window_handle:?}"
+            )));
+        };
+        Ok(Surface {
+            window: window.hwnd.get() as *mut _,
             presentable: true,
             swapchain: None,
             srgb_capable: self.srgb_capable,

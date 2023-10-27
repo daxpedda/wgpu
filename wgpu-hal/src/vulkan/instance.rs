@@ -733,10 +733,10 @@ impl crate::Instance<super::Api> for super::Instance {
 
     unsafe fn create_surface(
         &self,
-        display_handle: raw_window_handle::RawDisplayHandle,
-        window_handle: raw_window_handle::RawWindowHandle,
+        display_handle: raw_window_handle_0_5::RawDisplayHandle,
+        window_handle: raw_window_handle_0_5::RawWindowHandle,
     ) -> Result<super::Surface, crate::InstanceError> {
-        use raw_window_handle::{RawDisplayHandle as Rdh, RawWindowHandle as Rwh};
+        use raw_window_handle_0_5::{RawDisplayHandle as Rdh, RawWindowHandle as Rwh};
 
         match (window_handle, display_handle) {
             (Rwh::Wayland(handle), Rdh::Wayland(display)) => {
@@ -767,6 +767,54 @@ impl crate::Instance<super::Api> for super::Instance {
                 if self.shared.extensions.contains(&ext::MetalSurface::name()) =>
             {
                 self.create_surface_from_view(handle.ui_view)
+            }
+            (_, _) => Err(crate::InstanceError::new(format!(
+                "window handle {window_handle:?} is not a Vulkan-compatible handle"
+            ))),
+        }
+    }
+
+    #[cfg(feature = "raw-window-handle-0-6")]
+    unsafe fn create_surface_0_6(
+        &self,
+        display_handle: raw_window_handle_0_6::RawDisplayHandle,
+        window_handle: raw_window_handle_0_6::RawWindowHandle,
+    ) -> Result<super::Surface, crate::InstanceError> {
+        use raw_window_handle_0_6::{RawDisplayHandle as Rdh, RawWindowHandle as Rwh};
+
+        match (window_handle, display_handle) {
+            (Rwh::Wayland(handle), Rdh::Wayland(display)) => {
+                self.create_surface_from_wayland(display.display.as_ptr(), handle.surface.as_ptr())
+            }
+            (Rwh::Xlib(handle), Rdh::Xlib(display)) => {
+                let display = display.display.expect("Display pointer is not set.");
+                self.create_surface_from_xlib(display.as_ptr() as *mut *const c_void, handle.window)
+            }
+            (Rwh::Xcb(handle), Rdh::Xcb(display)) => {
+                let connection = display.connection.expect("Pointer to X-Server is not set.");
+                self.create_surface_from_xcb(connection.as_ptr(), handle.window.get())
+            }
+            (Rwh::AndroidNdk(handle), _) => {
+                self.create_surface_android(handle.a_native_window.as_ptr())
+            }
+            #[cfg(windows)]
+            (Rwh::Win32(handle), _) => {
+                use winapi::um::libloaderapi::GetModuleHandleW;
+
+                let hinstance = unsafe { GetModuleHandleW(std::ptr::null()) };
+                self.create_surface_from_hwnd(hinstance as *mut _, handle.hwnd.get() as *mut _)
+            }
+            #[cfg(target_os = "macos")]
+            (Rwh::AppKit(handle), _)
+                if self.shared.extensions.contains(&ext::MetalSurface::name()) =>
+            {
+                self.create_surface_from_view(handle.ns_view.as_ptr())
+            }
+            #[cfg(target_os = "ios")]
+            (Rwh::UiKit(handle), _)
+                if self.shared.extensions.contains(&ext::MetalSurface::name()) =>
+            {
+                self.create_surface_from_view(handle.ui_view.as_ptr())
             }
             (_, _) => Err(crate::InstanceError::new(format!(
                 "window handle {window_handle:?} is not a Vulkan-compatible handle"

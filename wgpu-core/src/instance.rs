@@ -462,19 +462,66 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
     #[cfg(feature = "raw-window-handle")]
     pub fn instance_create_surface(
         &self,
-        display_handle: raw_window_handle::RawDisplayHandle,
-        window_handle: raw_window_handle::RawWindowHandle,
+        display_handle: raw_window_handle_0_5::RawDisplayHandle,
+        window_handle: raw_window_handle_0_5::RawWindowHandle,
         id_in: Input<G, SurfaceId>,
     ) -> SurfaceId {
         profiling::scope!("Instance::create_surface");
 
         fn init<A: hal::Api>(
             inst: &Option<A::Instance>,
-            display_handle: raw_window_handle::RawDisplayHandle,
-            window_handle: raw_window_handle::RawWindowHandle,
+            display_handle: raw_window_handle_0_5::RawDisplayHandle,
+            window_handle: raw_window_handle_0_5::RawWindowHandle,
         ) -> Option<HalSurface<A>> {
             inst.as_ref().and_then(|inst| unsafe {
                 match inst.create_surface(display_handle, window_handle) {
+                    Ok(raw) => Some(HalSurface {
+                        raw,
+                        //acquired_texture: None,
+                    }),
+                    Err(e) => {
+                        log::warn!("Error: {:?}", e);
+                        None
+                    }
+                }
+            })
+        }
+
+        let surface = Surface {
+            presentation: None,
+            #[cfg(all(feature = "vulkan", not(target_arch = "wasm32")))]
+            vulkan: init::<hal::api::Vulkan>(&self.instance.vulkan, display_handle, window_handle),
+            #[cfg(all(feature = "metal", any(target_os = "macos", target_os = "ios")))]
+            metal: init::<hal::api::Metal>(&self.instance.metal, display_handle, window_handle),
+            #[cfg(all(feature = "dx12", windows))]
+            dx12: init::<hal::api::Dx12>(&self.instance.dx12, display_handle, window_handle),
+            #[cfg(all(feature = "dx11", windows))]
+            dx11: init::<hal::api::Dx11>(&self.instance.dx11, display_handle, window_handle),
+            #[cfg(feature = "gles")]
+            gl: init::<hal::api::Gles>(&self.instance.gl, display_handle, window_handle),
+        };
+
+        let mut token = Token::root();
+        let id = self.surfaces.prepare(id_in).assign(surface, &mut token);
+        id.0
+    }
+
+    #[cfg(feature = "raw-window-handle-0-6")]
+    pub fn instance_create_surface_0_6(
+        &self,
+        display_handle: raw_window_handle_0_6::RawDisplayHandle,
+        window_handle: raw_window_handle_0_6::RawWindowHandle,
+        id_in: Input<G, SurfaceId>,
+    ) -> SurfaceId {
+        profiling::scope!("Instance::create_surface");
+
+        fn init<A: hal::Api>(
+            inst: &Option<A::Instance>,
+            display_handle: raw_window_handle_0_6::RawDisplayHandle,
+            window_handle: raw_window_handle_0_6::RawWindowHandle,
+        ) -> Option<HalSurface<A>> {
+            inst.as_ref().and_then(|inst| unsafe {
+                match inst.create_surface_0_6(display_handle, window_handle) {
                     Ok(raw) => Some(HalSurface {
                         raw,
                         //acquired_texture: None,

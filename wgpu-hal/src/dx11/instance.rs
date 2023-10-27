@@ -30,8 +30,17 @@ impl crate::Instance<super::Api> for super::Instance {
 
     unsafe fn create_surface(
         &self,
-        display_handle: raw_window_handle::RawDisplayHandle,
-        window_handle: raw_window_handle::RawWindowHandle,
+        display_handle: raw_window_handle_0_5::RawDisplayHandle,
+        window_handle: raw_window_handle_0_5::RawWindowHandle,
+    ) -> Result<super::Surface, crate::InstanceError> {
+        todo!()
+    }
+
+    #[cfg(feature = "raw-window-handle-0-6")]
+    unsafe fn create_surface_0_6(
+        &self,
+        display_handle: raw_window_handle_0_6::RawDisplayHandle,
+        window_handle: raw_window_handle_0_6::RawWindowHandle,
     ) -> Result<super::Surface, crate::InstanceError> {
         todo!()
     }

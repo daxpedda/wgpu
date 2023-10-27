@@ -1087,11 +1087,34 @@ impl crate::context::Context for Context {
 
     fn instance_create_surface(
         &self,
-        _display_handle: raw_window_handle::RawDisplayHandle,
-        window_handle: raw_window_handle::RawWindowHandle,
+        _display_handle: raw_window_handle_0_5::RawDisplayHandle,
+        window_handle: raw_window_handle_0_5::RawWindowHandle,
     ) -> Result<(Self::SurfaceId, Self::SurfaceData), crate::CreateSurfaceError> {
         let canvas_attribute = match window_handle {
-            raw_window_handle::RawWindowHandle::Web(web_handle) => web_handle.id,
+            raw_window_handle_0_5::RawWindowHandle::Web(web_handle) => web_handle.id,
+            _ => panic!("expected valid handle for canvas"),
+        };
+        let canvas_node: wasm_bindgen::JsValue = web_sys::window()
+            .and_then(|win| win.document())
+            .and_then(|doc| {
+                doc.query_selector_all(&format!("[data-raw-handle=\"{canvas_attribute}\"]"))
+                    .ok()
+            })
+            .and_then(|nodes| nodes.get(0))
+            .expect("expected to find single canvas")
+            .into();
+        let canvas_element: web_sys::HtmlCanvasElement = canvas_node.into();
+        self.instance_create_surface_from_canvas(canvas_element)
+    }
+
+    #[cfg(feature = "raw-window-handle-0-6")]
+    fn instance_create_surface(
+        &self,
+        _display_handle: raw_window_handle_0_6::RawDisplayHandle,
+        window_handle: raw_window_handle_0_6::RawWindowHandle,
+    ) -> Result<(Self::SurfaceId, Self::SurfaceData), crate::CreateSurfaceError> {
+        let canvas_attribute = match window_handle {
+            raw_window_handle_0_6::RawWindowHandle::Web(web_handle) => web_handle.id,
             _ => panic!("expected valid handle for canvas"),
         };
         let canvas_node: wasm_bindgen::JsValue = web_sys::window()

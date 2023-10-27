@@ -12,7 +12,7 @@ fn main() {
     };
 
     #[cfg(feature = "winit")]
-    use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
+    use raw_window_handle_0_5::{HasRawDisplayHandle, HasRawWindowHandle};
     #[cfg(feature = "winit")]
     use winit::{event_loop::EventLoop, window::WindowBuilder};
 
