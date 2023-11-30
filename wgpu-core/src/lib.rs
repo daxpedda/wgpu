@@ -66,7 +66,7 @@ pub mod registry;
 pub mod resource;
 pub mod storage;
 mod track;
-mod validation;
+pub mod validation;
 
 pub use hal::{api, MAX_BIND_GROUPS, MAX_COLOR_ATTACHMENTS, MAX_VERTEX_BUFFERS};
 
