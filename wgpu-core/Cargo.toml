@@ -79,18 +79,15 @@ smallvec = "1"
 thiserror = "1"
 
 [dependencies.naga]
-path = "../naga"
 version = "0.14.0"
 features = ["clone", "span", "validate"]
 
 [dependencies.wgt]
 package = "wgpu-types"
-path = "../wgpu-types"
 version = "0.18.0"
 
 [dependencies.hal]
 package = "wgpu-hal"
-path = "../wgpu-hal"
 version = "0.18.0"
 default_features = false
 

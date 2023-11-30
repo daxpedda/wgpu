@@ -100,7 +100,6 @@ glow = { version = "0.13", optional = true }
 
 [dependencies.wgt]
 package = "wgpu-types"
-path = "../wgpu-types"
 version = "0.18.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -165,13 +164,11 @@ libc = "0.2"
 android_system_properties = "0.1.1"
 
 [dependencies.naga]
-path = "../naga"
 version = "0.14.0"
 features = ["clone"]
 
 # DEV dependencies
 [dev-dependencies.naga]
-path = "../naga"
 version = "0.14.0"
 features = ["wgsl-in"]
 
