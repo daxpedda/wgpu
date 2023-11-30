@@ -33,6 +33,8 @@ mod instance;
 
 use std::{borrow::Borrow, ffi::CStr, fmt, num::NonZeroU32, sync::Arc};
 
+pub use adapter::PhysicalDeviceCapabilities;
+
 use arrayvec::ArrayVec;
 use ash::{
     extensions::{ext, khr},
@@ -160,7 +162,7 @@ pub struct Adapter {
     instance: Arc<InstanceShared>,
     //queue_families: Vec<vk::QueueFamilyProperties>,
     known_memory_flags: vk::MemoryPropertyFlags,
-    phd_capabilities: adapter::PhysicalDeviceCapabilities,
+    phd_capabilities: PhysicalDeviceCapabilities,
     //phd_features: adapter::PhysicalDeviceFeatures,
     downlevel_flags: wgt::DownlevelFlags,
     private_caps: PrivateCapabilities,
