@@ -3,7 +3,7 @@ use std::{collections::hash_map::Entry, fmt};
 use thiserror::Error;
 use wgt::{BindGroupLayoutEntry, BindingType};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 enum ResourceType {
     Buffer {
         size: wgt::BufferSize,
@@ -18,7 +18,7 @@ enum ResourceType {
     },
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct Resource {
     #[allow(unused)]
     name: Option<String>,
@@ -94,20 +94,20 @@ impl fmt::Display for InterfaceVar {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 enum Varying {
     Local { location: u32, iv: InterfaceVar },
     BuiltIn(naga::BuiltIn),
 }
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct SpecializationConstant {
     id: u32,
     ty: NumericType,
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 struct EntryPoint {
     inputs: Vec<Varying>,
     outputs: Vec<Varying>,
@@ -119,7 +119,7 @@ struct EntryPoint {
     dual_source_blending: bool,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Interface {
     limits: wgt::Limits,
     features: wgt::Features,
