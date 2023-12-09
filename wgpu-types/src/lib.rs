@@ -933,7 +933,7 @@ impl InstanceFlags {
 ///
 /// [`downlevel_defaults()`]: Limits::downlevel_defaults
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase", default))]
 pub struct Limits {
@@ -1312,7 +1312,7 @@ impl Limits {
 
 /// Represents the sets of additional limits on an adapter,
 /// which take place when running on downlevel backends.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DownlevelLimits {}
 
@@ -1325,7 +1325,7 @@ impl Default for DownlevelLimits {
 }
 
 /// Lists various ways the underlying platform does not conform to the WebGPU standard.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DownlevelCapabilities {
     /// Combined boolean flags.
@@ -1591,7 +1591,7 @@ impl<L> DeviceDescriptor<L> {
         DeviceDescriptor {
             label: fun(&self.label),
             features: self.features,
-            limits: self.limits.clone(),
+            limits: self.limits,
         }
     }
 }

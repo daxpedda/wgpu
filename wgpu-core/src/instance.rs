@@ -310,7 +310,7 @@ impl<A: HalApi> Adapter<A> {
                 ref_count: self.life_guard.add_ref(),
             },
             caps.alignments.clone(),
-            caps.downlevel.clone(),
+            caps.downlevel,
             desc,
             trace_path,
             instance_flags,
@@ -1069,7 +1069,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
         let (adapter_guard, _) = hub.adapters.read(&mut token);
         adapter_guard
             .get(adapter_id)
-            .map(|adapter| adapter.raw.capabilities.limits.clone())
+            .map(|adapter| adapter.raw.capabilities.limits)
             .map_err(|_| InvalidAdapter)
     }
 
@@ -1082,7 +1082,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
         let (adapter_guard, _) = hub.adapters.read(&mut token);
         adapter_guard
             .get(adapter_id)
-            .map(|adapter| adapter.raw.capabilities.downlevel.clone())
+            .map(|adapter| adapter.raw.capabilities.downlevel)
             .map_err(|_| InvalidAdapter)
     }
 

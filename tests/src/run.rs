@@ -63,7 +63,7 @@ pub async fn execute_test(
     let (device, queue) = pollster::block_on(initialize_device(
         &adapter,
         config.params.required_features,
-        config.params.required_limits.clone(),
+        config.params.required_limits,
     ));
 
     let context = TestingContext {
@@ -72,7 +72,7 @@ pub async fn execute_test(
         adapter_downlevel_capabilities,
         device,
         device_features: config.params.required_features,
-        device_limits: config.params.required_limits.clone(),
+        device_limits: config.params.required_limits,
         queue,
     };
 

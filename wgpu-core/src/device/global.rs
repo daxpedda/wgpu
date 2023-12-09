@@ -122,7 +122,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
             return Err(InvalidDevice);
         }
 
-        Ok(device.limits.clone())
+        Ok(device.limits)
     }
 
     pub fn device_downlevel_properties<A: HalApi>(
@@ -137,7 +137,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
             return Err(InvalidDevice);
         }
 
-        Ok(device.downlevel.clone())
+        Ok(device.downlevel)
     }
 
     pub fn device_create_buffer<A: HalApi>(
@@ -1588,8 +1588,8 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
             let command_buffer = command::CommandBuffer::new(
                 encoder,
                 dev_stored,
-                device.limits.clone(),
-                device.downlevel.clone(),
+                device.limits,
+                device.downlevel,
                 device.features,
                 #[cfg(feature = "trace")]
                 device.trace.is_some(),

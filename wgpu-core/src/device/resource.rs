@@ -227,7 +227,7 @@ impl<A: HalApi> Device<A> {
                 }
             }),
             alignments,
-            limits: desc.limits.clone(),
+            limits: desc.limits,
             features: desc.features,
             downlevel,
             instance_flags,
@@ -1341,8 +1341,7 @@ impl<A: HalApi> Device<A> {
                 })
             })?;
 
-        let interface =
-            validation::Interface::new(&module, &info, self.limits.clone(), self.features);
+        let interface = validation::Interface::new(&module, &info, self.limits, self.features);
         let hal_shader = hal::ShaderInput::Naga(hal::NagaShader {
             module,
             info,
