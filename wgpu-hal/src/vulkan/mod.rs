@@ -33,7 +33,7 @@ mod instance;
 
 use std::{borrow::Borrow, ffi::CStr, fmt, num::NonZeroU32, sync::Arc};
 
-pub use adapter::PhysicalDeviceCapabilities;
+pub use adapter::{PhysicalDeviceCapabilities, PhysicalDeviceFeatures};
 
 use arrayvec::ArrayVec;
 use ash::{

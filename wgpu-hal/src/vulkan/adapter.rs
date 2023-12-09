@@ -19,19 +19,19 @@ fn indexing_features() -> wgt::Features {
 /// Aggregate of the `vk::PhysicalDevice*Features` structs used by `gfx`.
 #[derive(Debug, Default)]
 pub struct PhysicalDeviceFeatures {
-    core: vk::PhysicalDeviceFeatures,
+    pub core: vk::PhysicalDeviceFeatures,
     pub(super) descriptor_indexing: Option<vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>,
     imageless_framebuffer: Option<vk::PhysicalDeviceImagelessFramebufferFeaturesKHR>,
     timeline_semaphore: Option<vk::PhysicalDeviceTimelineSemaphoreFeaturesKHR>,
-    image_robustness: Option<vk::PhysicalDeviceImageRobustnessFeaturesEXT>,
-    robustness2: Option<vk::PhysicalDeviceRobustness2FeaturesEXT>,
+    pub image_robustness: Option<vk::PhysicalDeviceImageRobustnessFeaturesEXT>,
+    pub robustness2: Option<vk::PhysicalDeviceRobustness2FeaturesEXT>,
     multiview: Option<vk::PhysicalDeviceMultiviewFeaturesKHR>,
     astc_hdr: Option<vk::PhysicalDeviceTextureCompressionASTCHDRFeaturesEXT>,
     shader_float16: Option<(
         vk::PhysicalDeviceShaderFloat16Int8Features,
         vk::PhysicalDevice16BitStorageFeatures,
     )>,
-    zero_initialize_workgroup_memory:
+    pub zero_initialize_workgroup_memory:
         Option<vk::PhysicalDeviceZeroInitializeWorkgroupMemoryFeatures>,
 }
 
@@ -41,7 +41,7 @@ unsafe impl Sync for PhysicalDeviceFeatures {}
 
 impl PhysicalDeviceFeatures {
     /// Add the members of `self` into `info.enabled_features` and its `p_next` chain.
-    pub fn add_to_device_create_builder<'a>(
+    pub(crate) fn add_to_device_create_builder<'a>(
         &'a mut self,
         mut info: vk::DeviceCreateInfoBuilder<'a>,
     ) -> vk::DeviceCreateInfoBuilder<'a> {
